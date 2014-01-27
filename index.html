@@ -1,0 +1,123 @@
+<html>
+<head>
+    <title>Simple Page-it Plugin</title>
+    <link rel="stylesheet" type="text/css" href="page-it.css">
+</head>
+<body>
+    <div>
+        <label for='search-box'>Filter </label>
+        <input type='text' id='search-box'>
+    </div>
+ <table class="avgRatings">
+        <tr>
+            <th>Month</th>
+            <th>2010</th>
+            <th>2011</th>
+            <th>2012</th>
+            <th>2013</th>
+        </tr>
+        <tr>
+            <td>January</td>
+            <td>4.6</td>
+            <td>3.1</td>
+            <td>2.1</td>
+            <td>3.7</td>
+        </tr>
+        <tr>
+            <td>February</td>
+            <td>4.1</td>
+            <td>4.4</td>
+            <td>2.2</td>
+            <td>2.6</td>
+        </tr>
+        <tr>
+            <td>March</td>
+            <td>3.3</td>
+            <td>4.1</td>
+            <td>2.8</td>
+            <td>2.7</td>
+        </tr>
+        <tr>
+            <td>April</td>
+            <td>4.2</td>
+            <td>3.1</td>
+            <td>2.3</td>
+            <td>1.6</td>
+        </tr>
+        <tr>
+            <td>May</td>
+            <td>1.6</td>
+            <td>2.1</td>
+            <td>3.1</td>
+            <td>2.7</td>
+        </tr>
+        <tr>
+            <td>June</td>
+            <td>2.1</td>
+            <td>4.0</td>
+            <td>3.1</td>
+            <td>4.4</td>
+        </tr>
+        <tr>
+            <td>July</td>
+            <td>3.6</td>
+            <td>1.1</td>
+            <td>4.1</td>
+            <td>2.7</td>
+        </tr>
+        <tr>
+            <td>August</td>
+            <td>2.2</td>
+            <td>4.1</td>
+            <td>3.3</td>
+            <td>4.2</td>
+        </tr>
+        <tr>
+            <td>September</td>
+            <td>3.1</td>
+            <td>4.6</td>
+            <td>2.4</td>
+            <td>2.2</td>
+        </tr>
+        <tr>
+            <td>October</td>
+            <td>1.2</td>
+            <td>2.1</td>
+            <td>3.7</td>
+            <td>4.5</td>
+        </tr>
+        <tr>
+            <td>November</td>
+            <td>3.6</td>
+            <td>2.1</td>
+            <td>2.1</td>
+            <td>2.7</td>
+        </tr>
+        <tr>
+            <td>December</td>
+            <td>1.2</td>
+            <td>3.6</td>
+            <td>3.2</td>
+            <td>3.4</td>
+        </tr>
+    </table>
+    <ul id='page-it'></ul>
+    <script type="text/javascript" src='http://code.jquery.com/jquery-1.10.2.min.js'></script>
+    <script type="text/javascript" src='page-it.jquery.js'></script>
+    <script type="text/javascript">
+        $(function() {
+            var items = [];
+            for(var i = 0; i < $('.avgRatings th').length; i++){
+                items.push($('.avgRatings tr>:nth-child('+(i+1)+')'));
+            }
+            items.shift();
+            $('#page-it').page_it({
+                items: items,
+                itemsOnPage: 2,
+                scroll: true,
+                cssStyle: 'light-theme'
+            });
+        });
+    </script>
+</body>
+</html>
