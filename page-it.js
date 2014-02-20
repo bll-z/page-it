@@ -19,6 +19,13 @@
                 selectOnClick: true,
                 nextAtFront: false,
                 search: null,
+                sort: false,
+                sortContainer: null,
+                sortExceptions: [],
+                sortAlts: {},
+                sortOptions: {},
+                ascIcon: '',
+                descIcon: '',
                 onPageClick: function(pageNumber, event) {
                     // Callback triggered when a page is clicked
                     // Page number is given as an optional parameter
@@ -32,6 +39,11 @@
             }, options || {});
 
             var self = this;
+
+            if(!window.tsort && o.sort) {
+                document.write('<script type="text/javascript" src="https://raw.github.com/Sjeiti/TinySort/master/dist/jquery.tinysort.min.js"></script>');
+            }
+
             o.filteredItems = $();
             o.pages = !o.items ? 1 : o.scroll ? o.items.length-o.itemsOnPage+1 : Math.ceil(o.items.length * 1.0 / o.itemsOnPage) ? Math.ceil(o.items.length * 1.0 / o.itemsOnPage) : 1;
             o.currentPage = o.currentPage - 1;
@@ -43,7 +55,6 @@
             if (o.items && o.currentPage <= o.pages) {
                 var start_index, end_index;
                 if(o.scroll){
-                    console.log('FUCK')
                     start_index = o.currentPage;
                     end_index = o.currentPage + o.itemsOnPage;
                 }
@@ -80,6 +91,42 @@
                 o.search.keyup(function(e){
                     methods.filter.call(self, $(this).val().toLowerCase());
                 });
+            }
+            if(o.sort) {
+                if(o.sortContainer) {
+                    for(var i=1; i<=o.sortContainer.children().size(); i++) {
+                        if(i-1 in o.sortExceptions) continue;
+                        var head = o.sortContainer.children(':nth-child('+i+')');
+                        head.data('index',i);
+                        head.on('click', function() {
+                            var $this = $(this);
+                            var n = parseInt($this.data('index'));
+                            var extra = {};
+                            if(n-1 in o.sortOptions) {
+                                extra = o.sortOptions[n-1];
+                            }
+                            if(n-1 in o.sortAlts) {
+                                n = o.sortAlts[n-1] + 1;
+                            }
+                            o.sortContainer.find('.sort-icon').remove();
+                            if($this.hasClass('sorting_asc')) {
+                                o.items.tsort('td:nth-child('+n+')', $.extend({},{order:'desc'},extra));
+                                $this.removeClass('sorting_asc').addClass('sorting_desc');
+                                $this.append(o.descIcon);
+                            }
+                            else {
+                                o.sortContainer.children('[class*="sorting_"]').removeClass('sorting_asc').removeClass('sorting_desc');
+                                o.items.tsort('td:nth-child('+n+')', $.extend({},{order:'asc'},extra));
+                                $this.removeClass('sorting_desc').addClass('sorting_asc');
+                                $this.append(o.ascIcon);
+                            }
+                            methods.updateItems.call(self, o.items.not(o.filteredItems), o.currentPage+1);
+                        });
+                    }
+                }
+                else {
+                    console.log("Sort is set, but there is no sortContainer. Sort not implemented.");
+                }
             }
             o.onInit();
 
@@ -257,7 +304,7 @@
         },
 
         _appendItem: function(pageIndex, opts) {
-            var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li></li>'), $ul = self.find('ul');
+            var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li onclick="console.log(\'click\');this.getElementsByTagName(\'a\')[0].click();"></li>'), $ul = self.find('ul');
 
             pageIndex = pageIndex < 0 ? 0 : (pageIndex < o.pages ? pageIndex : o.pages - 1);
 
@@ -317,14 +364,9 @@
                     
                 }
                 if(Object.prototype.toString.call( o.items ) === '[object Array]'){
-                    if (o.pages == o.currentPage)
-                        o.items.slice(start_hide_index).forEach(function(element){
-                            element.removeClass('table-row-visible').hide();
-                        });
-                    else
-                        o.items.slice(start_hide_index, end_hide_index).forEach(function(element){
-                            element.removeClass('table-row-visible').hide()
-                        });
+                    for(item in o.items) {
+                        o.items[item].removeClass('table-row-visible').hide();
+                    }
                     if (o.pages == pageIndex)
                         o.items.slice(start_show_index).forEach(function(element){
                             element.addClass('table-row-visible').show()
@@ -335,10 +377,7 @@
                         });
                 }
                 else{
-                    if (o.pages == o.currentPage)
-                        o.items.slice(start_hide_index).removeClass('table-row-visible').hide();
-                    else
-                        o.items.slice(start_hide_index, end_hide_index).removeClass('table-row-visible').hide();
+                    o.items.removeClass('table-row-visible').hide();
                     if (o.pages == pageIndex)
                         o.items.slice(start_show_index).addClass('table-row-visible').show();
                     else
