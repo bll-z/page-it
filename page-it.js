@@ -333,7 +333,7 @@
         },
 
         _appendItem: function(pageIndex, opts) {
-	    var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li onclick="console.log(\'click\');this.getElementsByTagName(\'a\')[0].click();"></li>'), $ul = self.find('ul');
+        var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li onclick="console.log(\'click\');this.getElementsByTagName(\'a\')[0].click();"></li>'), $ul = self.find('ul');
 
             pageIndex = pageIndex < 0 ? 0 : (pageIndex < o.pages ? pageIndex : o.pages - 1);
 
@@ -406,7 +406,7 @@
                         });
                 }
                 else{
-                    o.items.removeClass('table-row-visible').hide();
+            o.items.removeClass('table-row-visible').hide();
                     if (o.pages == pageIndex)
                         o.items.slice(start_show_index).addClass('table-row-visible').css('display',o.display);
                     else
