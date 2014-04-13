@@ -5,6 +5,7 @@
             var o = $.extend({
                 itemsOnPage: 1,
                 displayedPages: 5,
+                display: '', // ex table-row
                 edges: 2,
                 scroll: false,
                 currentPage: 1,
@@ -20,12 +21,14 @@
                 nextAtFront: false,
                 search: null,
                 sort: false,
-                sortContainer: null,
+                sortContainer: null, // the table header (parent of sort buttons)
                 sortExceptions: [],
-                sortAlts: {},
-                sortOptions: {},
-                ascIcon: '',
-                descIcon: '',
+                sortAlts: {}, // {2:3, 4:0} etc
+                sortOptions: {}, // for tinysort
+                ascIcon: '<i class="sort-icon pull-right fa fa-caret-up"></i>',
+                descIcon: '<i class="sort-icon pull-right fa fa-caret-down"></i>',
+                sortIcon: '<i class="sort-icon pull-right fa fa-sort"></i>',
+                highlightOnClick: false,
                 onPageClick: function(pageNumber, event) {
                     // Callback triggered when a page is clicked
                     // Page number is given as an optional parameter
@@ -35,19 +38,29 @@
                 },
                 onFilter: function(filterString, filterItems) {
 
+                },
+                onItemClick: function(item){
+
                 }
             }, options || {});
 
             var self = this;
 
             if(!window.tsort && o.sort) {
-                document.write('<script type="text/javascript" src="https://raw.github.com/Sjeiti/TinySort/master/dist/jquery.tinysort.min.js"></script>');
+                $('body').append('<script type="text/javascript" src="https://raw.github.com/Sjeiti/TinySort/master/dist/jquery.tinysort.min.js"></script>');
             }
 
             o.filteredItems = $();
             o.pages = !o.items ? 1 : o.scroll ? o.items.length-o.itemsOnPage+1 : Math.ceil(o.items.length * 1.0 / o.itemsOnPage) ? Math.ceil(o.items.length * 1.0 / o.itemsOnPage) : 1;
             o.currentPage = o.currentPage - 1;
             o.halfDisplayed = o.displayedPages / 2;
+            o.items.on('click', function(){
+                if(o.highlightOnClick){
+                    o.items.removeClass('selected');
+                    $(this).addClass('selected');
+                }
+                o.onItemClick($(this));
+            });
             this.each(function() {
                 self.addClass(o.cssStyle + ' simple-pagination').data('pagination', o);
                 methods._draw.call(self);
@@ -61,7 +74,7 @@
                 else{
                     start_index = o.currentPage*o.itemsOnPage;
                     end_index = (o.currentPage+1)*o.itemsOnPage;
-                    
+
                 }
                 if(Object.prototype.toString.call( o.items ) === '[object Array]'){
                     o.search = null;
@@ -70,19 +83,19 @@
                     });
                     if (o.currentPage == o.pages)
                         o.items.slice(start_index).forEach(function(element){
-                            element.addClass('table-row-visible').show();
+                            element.addClass('table-row-visible').css('display',o.display);
                         });
                     else
                         o.items.slice(start_index, end_index).forEach(function(element){
-                            element.addClass('table-row-visible').show();
+                            element.addClass('table-row-visible').css('display',o.display);
                         });
                 }
                 else{
                     o.items.removeClass('table-row-visible').hide();
                     if (o.currentPage == o.pages)
-                        o.items.slice(start_index).addClass('table-row-visible').show();
+                        o.items.slice(start_index).addClass('table-row-visible').css('display',o.display);
                     else
-                        o.items.slice(start_index, end_index).addClass('table-row-visible').show();
+                        o.items.slice(start_index, end_index).addClass('table-row-visible').css('display',o.display);
                 }
                 start_index = end_index = null;
             }
@@ -95,33 +108,49 @@
             if(o.sort) {
                 if(o.sortContainer) {
                     for(var i=1; i<=o.sortContainer.children().size(); i++) {
-                        if(i-1 in o.sortExceptions) continue;
-                        var head = o.sortContainer.children(':nth-child('+i+')');
-                        head.data('index',i);
-                        head.on('click', function() {
-                            var $this = $(this);
-                            var n = parseInt($this.data('index'));
-                            var extra = {};
-                            if(n-1 in o.sortOptions) {
-                                extra = o.sortOptions[n-1];
-                            }
-                            if(n-1 in o.sortAlts) {
-                                n = o.sortAlts[n-1] + 1;
-                            }
-                            o.sortContainer.find('.sort-icon').remove();
-                            if($this.hasClass('sorting_asc')) {
-                                o.items.tsort('td:nth-child('+n+')', $.extend({},{order:'desc'},extra));
-                                $this.removeClass('sorting_asc').addClass('sorting_desc');
-                                $this.append(o.descIcon);
-                            }
-                            else {
-                                o.sortContainer.children('[class*="sorting_"]').removeClass('sorting_asc').removeClass('sorting_desc');
-                                o.items.tsort('td:nth-child('+n+')', $.extend({},{order:'asc'},extra));
-                                $this.removeClass('sorting_desc').addClass('sorting_asc');
-                                $this.append(o.ascIcon);
-                            }
-                            methods.updateItems.call(self, o.items.not(o.filteredItems), o.currentPage+1);
-                        });
+                    if(i-1 in o.sortExceptions) continue;
+                    var head = o.sortContainer.children(':nth-child('+i+')');
+                    head.data('index',i);
+                    // make the head's content float left and have a smaller width
+                    html = "<div style='float:left;width:calc(100% - 20px)'>" + head.html() + "</div>";
+                    head.html(html);
+                    // append asc/desc icons from the start so head looks sortable
+                    head.append(o.sortIcon);
+                    head.css('cursor','pointer');
+                    head.on('click', function() {
+                        var $this = $(this);
+                        var n = parseInt($this.data('index'));
+                        var extra = {};
+                        if(n-1 in o.sortOptions) {
+                            extra = o.sortOptions[n-1];
+                        }
+                        if(n-1 in o.sortAlts) {
+                            n = o.sortAlts[n-1] + 1;
+                        }
+                        // remove all icons to get rid of stray up/downsort indicators
+                        o.sortContainer.find('.sort-icon').remove();
+                        // go through heads and replace sort placeholders
+                        for(var i=1; i<=o.sortContainer.children().size(); i++) {
+                            if(i-1 in o.sortExceptions) continue;
+                            var temphead = o.sortContainer.children(':nth-child('+i+')');
+                            temphead.append(o.sortIcon);
+                        }
+                        // finally, remove placeholder just from this head
+                        $this.find('.sort-icon').remove();
+                        // sort and add proper icon
+                        if($this.hasClass('sorting_asc')) {
+                            o.items.tsort('li:nth-child('+n+'),td:nth-child('+n+')', $.extend({},{order:'desc'},extra));
+                            $this.removeClass('sorting_asc').addClass('sorting_desc');
+                            $this.append(o.descIcon);
+                        }
+                        else {
+                            o.sortContainer.children('[class*="sorting_"]').removeClass('sorting_asc').removeClass('sorting_desc');
+                            o.items.tsort('li:nth-child('+n+'),td:nth-child('+n+')', $.extend({},{order:'asc'},extra));
+                            $this.removeClass('sorting_desc').addClass('sorting_asc');
+                            $this.append(o.ascIcon);
+                        }
+                        methods.updateItems.call(self, o.items.not(o.filteredItems), o.currentPage+1);
+                    });
                     }
                 }
                 else {
@@ -211,7 +240,7 @@
                     o.prevPage = o.currentPage;
                 methods.updateItems.call(this, o.items.not(o.filteredItems));
             }
-            return o.onFilter(filterString, o.items);   
+            return o.onFilter(filterString, o.items);
         },
 
         updateItems: function (newItems, pageIndex) {
@@ -304,7 +333,7 @@
         },
 
         _appendItem: function(pageIndex, opts) {
-            var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li onclick="console.log(\'click\');this.getElementsByTagName(\'a\')[0].click();"></li>'), $ul = self.find('ul');
+	    var self = this, options, $link, o = self.data('pagination'), $linkWrapper = $('<li onclick="console.log(\'click\');this.getElementsByTagName(\'a\')[0].click();"></li>'), $ul = self.find('ul');
 
             pageIndex = pageIndex < 0 ? 0 : (pageIndex < o.pages ? pageIndex : o.pages - 1);
 
@@ -361,27 +390,27 @@
                     end_hide_index = (o.currentPage+1)*o.itemsOnPage;
                     start_show_index = pageIndex*o.itemsOnPage;
                     end_show_index = (pageIndex+1)*o.itemsOnPage;
-                    
+
                 }
                 if(Object.prototype.toString.call( o.items ) === '[object Array]'){
-                    for(item in o.items) {
-                        o.items[item].removeClass('table-row-visible').hide();
-                    }
+            for(item in o.items) {
+            o.items[item].removeClass('table-row-visible').hide();
+            }
                     if (o.pages == pageIndex)
                         o.items.slice(start_show_index).forEach(function(element){
-                            element.addClass('table-row-visible').show()
+                            element.addClass('table-row-visible').css('display',o.display)
                         });
                     else
                         o.items.slice(start_show_index, end_show_index).forEach(function(element){
-                            element.addClass('table-row-visible').show()
+                            element.addClass('table-row-visible').css('display',o.display)
                         });
                 }
                 else{
                     o.items.removeClass('table-row-visible').hide();
                     if (o.pages == pageIndex)
-                        o.items.slice(start_show_index).addClass('table-row-visible').show();
+                        o.items.slice(start_show_index).addClass('table-row-visible').css('display',o.display);
                     else
-                        o.items.slice(start_show_index, end_show_index).addClass('table-row-visible').show(); 
+                        o.items.slice(start_show_index, end_show_index).addClass('table-row-visible').css('display',o.display);
                 }
                 start_hide_index = end_hide_index = start_show_index = end_show_index = null;
             }
